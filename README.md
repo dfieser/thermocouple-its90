@@ -2,9 +2,9 @@
 
 NIST ITS-90 thermocouple conversion for Python: voltage to temperature and
 temperature to voltage for all eight letter-designated types (B, E, J, K, N,
-R, S, T), with cold-junction compensation, Seebeck coefficients, and a test
-suite that verifies every one of the 12,026 tabulated points of the NIST
-reference tables on every run.
+R, S, T), with cold-junction compensation and Seebeck coefficients. The test
+suite verifies every one of the 12,026 tabulated points of the NIST reference
+tables on every run.
 
 [![Tests](https://github.com/dfieser/thermocouple-its90/actions/workflows/test.yml/badge.svg)](https://github.com/dfieser/thermocouple-its90/actions/workflows/test.yml)
 [![PyPI](https://img.shields.io/pypi/v/thermocouple-its90)](https://pypi.org/project/thermocouple-its90/)
@@ -34,7 +34,7 @@ TypeK.seebeck(300.0)      # 0.0416  (mV per C)
 TypeK.range               # (-270.0, 1372.0)
 ```
 
-### Cold-junction compensation, done honestly
+### Cold-junction compensation
 
 A thermocouple measures the difference between its junctions, and the
 reference tables assume the cold junction sits at 0 C. If your meter's
@@ -61,10 +61,10 @@ get("t").temperature(-4.648)    # -149.98 C (cryogenic ranges included)
 ## Accuracy, verified rather than asserted
 
 - The forward reference functions reproduce **all 12,026 one-degree points**
-  of the NIST reference tables within their 0.001 mV print rounding; the
+  of the NIST reference tables within their 0.001 mV print rounding. The
   full comparison runs in CI on every push (`tests/test_full_tables.py`).
 - Inversion seeds with the published ITS-90 inverse polynomials and refines
-  by Newton iteration on the exact forward function, so round trips agree to
+  by Newton iteration on the exact forward function. Round trips agree to
   microdegrees instead of the inverse polynomials' 0.02 to 0.06 C error
   bands.
 - Types K, E and T invert over their full cryogenic ranges (to -270 C), below
@@ -75,8 +75,7 @@ get("t").temperature(-4.648)    # -149.98 C (cryogenic ranges included)
 
 ## MCP server for AI agents
 
-Language models mis-remember thermocouple polynomials with great confidence.
-This package ships a [Model Context Protocol](https://modelcontextprotocol.io)
+Language models mis-remember thermocouple polynomials. The package ships a [Model Context Protocol](https://modelcontextprotocol.io)
 server so agents call the verified implementation instead:
 
 ```bash
@@ -90,7 +89,7 @@ Tools: `thermocouple_to_temperature`, `thermocouple_to_emf`,
 ## Data provenance and licensing
 
 Coefficients were machine-parsed, never hand-typed, from the NIST ITS-90
-Thermocouple Database (SRD 60, https://its90.nist.gov/), which reproduces
+Thermocouple Database (SRD 60, https://its90.nist.gov/). The database reproduces
 NIST Monograph 175 (Burns, Scroger, Strouse, Croarkin, and Guthrie, 1993),
 a United States government publication not subject to copyright. The
 canonical dataset lives in `data/its90.json`; `_data.py` is generated from
@@ -110,8 +109,7 @@ it and CI fails if they drift. Code is MIT licensed.
 
 If this library is useful in published work, please cite it via
 https://doi.org/10.5281/zenodo.22036394 (see `CITATION.cff`; each release
-gets its own DOI) along with the
-underlying reference: Burns, G. W., Scroger, M. G., Strouse, G. F.,
+gets its own DOI). Please also cite the underlying reference: Burns, G. W., Scroger, M. G., Strouse, G. F.,
 Croarkin, M. C., & Guthrie, W. F. (1993). *Temperature-electromotive force
 reference functions and tables for the letter-designated thermocouple types
 based on the ITS-90* (NIST Monograph 175). NIST.
