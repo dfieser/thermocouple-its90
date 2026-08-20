@@ -1,0 +1,40 @@
+cff-version: 1.2.0
+message: If you use this software, please cite it as below.
+title: "thermocouple-its90: NIST ITS-90 thermocouple conversion for Python"
+type: software
+authors:
+  - family-names: Fieser
+    given-names: David
+    orcid: "https://orcid.org/0009-0007-5754-4331"
+version: 1.0.0
+date-released: 2026-08-20
+license: MIT
+repository-code: "https://github.com/dfieser/thermocouple-its90"
+url: "https://dfieser.com/ThermocoupleConverter/index.html"
+keywords:
+  - thermocouple
+  - ITS-90
+  - NIST
+  - temperature
+  - metrology
+  - instrumentation
+references:
+  - type: report
+    title: >-
+      Temperature-electromotive force reference functions and tables for
+      the letter-designated thermocouple types based on the ITS-90
+    authors:
+      - family-names: Burns
+        given-names: G. W.
+      - family-names: Scroger
+        given-names: M. G.
+      - family-names: Strouse
+        given-names: G. F.
+      - family-names: Croarkin
+        given-names: M. C.
+      - family-names: Guthrie
+        given-names: W. F.
+    year: 1993
+    institution:
+      name: National Institute of Standards and Technology
+    number: NIST Monograph 175

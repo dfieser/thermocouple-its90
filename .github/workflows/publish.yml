@@ -1,0 +1,60 @@
+name: Publish to PyPI
+
+# Publishes on GitHub release via PyPI Trusted Publishing (OIDC): no API
+# tokens exist anywhere. One-time setup on PyPI: add a pending publisher for
+# project "thermocouple-its90", owner "dfieser", repository
+# "thermocouple-its90", workflow "publish.yml", environment "pypi".
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Test before building
+        run: |
+          python -m pip install --quiet pytest
+          python -m pip install --quiet -e .
+          pytest -q
+
+      - name: Build sdist and wheel
+        run: |
+          python -m pip install --quiet build
+          python -m build
+
+      - name: Store the distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - name: Fetch the distribution
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish via trusted publishing
+        uses: pypa/gh-action-pypi-publish@release/v1

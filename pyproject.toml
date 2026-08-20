@@ -1,0 +1,66 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "thermocouple-its90"
+dynamic = ["version"]
+description = "NIST ITS-90 thermocouple conversion (types B, E, J, K, N, R, S, T): mV to temperature and back, with cold-junction compensation, verified against all 12,026 NIST reference table points"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.9"
+authors = [{ name = "David Fieser" }]
+keywords = [
+    "thermocouple",
+    "ITS-90",
+    "NIST",
+    "temperature",
+    "thermometry",
+    "type-K",
+    "cold-junction-compensation",
+    "metrology",
+    "instrumentation",
+    "calibration",
+    "Monograph-175",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Manufacturing",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Typing :: Typed",
+]
+
+[project.optional-dependencies]
+mcp = ["mcp>=1.0"]
+
+[project.scripts]
+thermocouple-its90-mcp = "thermocouple_its90.mcp_server:main"
+
+[project.urls]
+Homepage = "https://github.com/dfieser/thermocouple-its90"
+"Live calculator" = "https://dfieser.com/ThermocoupleConverter/index.html"
+Repository = "https://github.com/dfieser/thermocouple-its90"
+Issues = "https://github.com/dfieser/thermocouple-its90/issues"
+
+[tool.hatch.version]
+path = "src/thermocouple_its90/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/thermocouple_its90"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

@@ -1,0 +1,24 @@
+{
+  "title": "thermocouple-its90: NIST ITS-90 thermocouple conversion for Python",
+  "description": "Voltage to temperature and temperature to voltage for thermocouple types B, E, J, K, N, R, S and T on the ITS-90 scale, with cold-junction compensation and a test suite verifying all 12,026 tabulated NIST reference points. Includes a Model Context Protocol server for AI agents. The engine also powers the live calculator at https://dfieser.com/ThermocoupleConverter/index.html.",
+  "creators": [
+    {
+      "name": "Fieser, David",
+      "orcid": "0009-0007-5754-4331"
+    }
+  ],
+  "license": "MIT",
+  "upload_type": "software",
+  "keywords": [
+    "thermocouple", "ITS-90", "NIST", "temperature", "thermometry",
+    "cold junction compensation", "metrology", "instrumentation",
+    "Model Context Protocol"
+  ],
+  "related_identifiers": [
+    {
+      "relation": "isSupplementTo",
+      "identifier": "https://dfieser.com/ThermocoupleConverter/index.html",
+      "resource_type": "other"
+    }
+  ]
+}
