@@ -10,6 +10,7 @@ reference tables on every run.
 [![PyPI](https://img.shields.io/pypi/v/thermocouple-its90)](https://pypi.org/project/thermocouple-its90/)
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue)](https://pypi.org/project/thermocouple-its90/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![DOI](https://zenodo.org/badge/1340851774.svg)](https://zenodo.org/badge/latestdoi/1340851774)
 
 Pure standard library, no dependencies, fully typed. A browser version of
 this engine runs as a [free online thermocouple
@@ -107,8 +108,9 @@ it and CI fails if they drift. Code is MIT licensed.
 
 ## Citation
 
-If this library is useful in published work, please cite it (see
-`CITATION.cff`; a Zenodo DOI is minted per release) along with the
+If this library is useful in published work, please cite it via
+https://doi.org/10.5281/zenodo.22036394 (see `CITATION.cff`; each release
+gets its own DOI) along with the
 underlying reference: Burns, G. W., Scroger, M. G., Strouse, G. F.,
 Croarkin, M. C., & Guthrie, W. F. (1993). *Temperature-electromotive force
 reference functions and tables for the letter-designated thermocouple types
