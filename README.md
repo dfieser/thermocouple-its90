@@ -109,9 +109,9 @@ it and CI fails if they drift. Code is MIT licensed.
 
 ## Citation
 
-If this library is useful in published work, please cite it via
-https://doi.org/10.5281/zenodo.22036394 (see `CITATION.cff`; each release
-gets its own DOI). Please also cite the underlying reference: Burns, G. W., Scroger, M. G., Strouse, G. F.,
+If this library is useful in published work, please cite it via the
+concept DOI https://doi.org/10.5281/zenodo.22036393, which always resolves to
+the latest release (see `CITATION.cff`). Please also cite the underlying reference: Burns, G. W., Scroger, M. G., Strouse, G. F.,
 Croarkin, M. C., & Guthrie, W. F. (1993). *Temperature-electromotive force
 reference functions and tables for the letter-designated thermocouple types
 based on the ITS-90* (NIST Monograph 175). NIST.
