@@ -8,6 +8,11 @@ name: Publish to MCP Registry
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version already live on PyPI, e.g. 1.0.1"
+        required: true
 
 permissions:
   id-token: write
@@ -27,7 +32,8 @@ jobs:
 
       - name: Wait for the release to be live on PyPI
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${{ inputs.version }}"
+          if [ -z "$VERSION" ]; then VERSION="${GITHUB_REF_NAME#v}"; fi
           echo "waiting for thermocouple-its90 $VERSION on PyPI"
           for i in $(seq 1 30); do
             if curl -fsS "https://pypi.org/pypi/thermocouple-its90/$VERSION/json" > /dev/null 2>&1; then
@@ -40,7 +46,8 @@ jobs:
 
       - name: Sync server.json version to the tag
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${{ inputs.version }}"
+          if [ -z "$VERSION" ]; then VERSION="${GITHUB_REF_NAME#v}"; fi
           jq --arg v "$VERSION" '.version = $v | .packages[0].version = $v' server.json > server.tmp
           mv server.tmp server.json
           cat server.json
