@@ -62,12 +62,15 @@ def style_axes(ax, pal):
     ax.set_axisbelow(True)
 
 
-# Hand-placed end-label offsets in points: R and S endpoints are 2.4 mV
-# apart and T ends just beneath the J curve, so automatic placement collides.
-LABEL_OFFSETS = {
-    "E": (8, 4), "J": (8, 0), "K": (8, 0), "N": (8, -4),
-    "R": (8, 12), "S": (8, -2), "B": (8, -6),
-}
+# Label placement, chosen so that no letter touches any curve and no leader
+# line crosses any curve. E, J, K and N have clear space at their endpoints.
+# T's endpoint is boxed in by E, J, K and N, but the wedge between J and K
+# widens to the right, so its label sits inside that wedge with a leader
+# running back down the wedge. R, S and B end within 7.3 mV of each other,
+# too tight for three 17-point letters, so they form a column in the empty
+# right margin with short leaders to their endpoints.
+END_OFFSETS = {"E": (8, 4), "J": (8, 0), "K": (8, 0), "N": (8, -4)}
+PLACED = {"T": (560, 26.9), "R": (1850, 27.0), "S": (1850, 18.4), "B": (1860, 9.5)}
 
 
 def reference_functions(theme: str, pal: dict) -> None:
@@ -77,22 +80,22 @@ def reference_functions(theme: str, pal: dict) -> None:
     for letter in ["E", "J", "K", "N", "T", "S", "R", "B"]:
         ts, es = curve(TYPES[letter])
         ax.plot(ts, es, color=SERIES[theme][letter], linewidth=2.4)
-        if letter == "T":
-            # The 400 C corridor is packed (E, J, K all pass close by), so
-            # T gets a short leader into the clear gap between K and N.
-            ax.annotate("T", (ts[-1], es[-1]), xytext=(24, -34),
+        if letter in END_OFFSETS:
+            ax.annotate(letter, (ts[-1], es[-1]),
+                        xytext=END_OFFSETS[letter],
                         textcoords="offset points",
                         color=SERIES[theme][letter], fontsize=17,
-                        fontweight="bold", va="center", family="serif",
+                        fontweight="bold", va="center", family="serif")
+        else:
+            ax.annotate(letter, (ts[-1], es[-1]), xytext=PLACED[letter],
+                        textcoords="data",
+                        color=SERIES[theme][letter], fontsize=17,
+                        fontweight="bold", va="center", ha="left",
+                        family="serif",
                         arrowprops={"arrowstyle": "-",
                                     "color": SERIES[theme][letter],
-                                    "lw": 1.0, "shrinkB": 3})
-            continue
-        ax.annotate(letter, (ts[-1], es[-1]), xytext=LABEL_OFFSETS[letter],
-                    textcoords="offset points", color=SERIES[theme][letter],
-                    fontsize=17, fontweight="bold", va="center",
-                    family="serif")
-    ax.set_xlim(-300, 1960)
+                                    "lw": 0.9, "shrinkA": 3, "shrinkB": 3})
+    ax.set_xlim(-300, 1990)
     ax.set_ylim(-13, 85)
     ax.set_xlabel("temperature (\N{DEGREE SIGN}C)", color=pal["ink2"], fontsize=17, family="serif")
     ax.set_ylabel("EMF (mV, 0 \N{DEGREE SIGN}C reference)", color=pal["ink2"], fontsize=17, family="serif")
@@ -120,16 +123,20 @@ def type_b_dip(theme: str, pal: dict) -> None:
     inv_lo, _ = TypeB.invertible_emf_range
     ax.axhline(inv_lo, color=pal["ultra"], linewidth=1.4, linestyle=(0, (5, 3)))
     ax.axhline(0.0, color=pal["ink3"], linewidth=0.9)
+    # Placement: the threshold caption owns the empty upper-left rectangle
+    # above the dashed line; the dip caption owns the empty strip below the
+    # zero line, with a leader that runs entirely under the curve.
     ax.annotate("0.291 mV: inversion starts here",
-                (12, inv_lo), xytext=(0, 10), textcoords="offset points",
+                (12, inv_lo), xytext=(0, 14), textcoords="offset points",
                 ha="left", color=pal["ultra"], fontsize=15, family="serif")
     tmin = min(range(len(es)), key=lambda i: es[i])
     ax.annotate("the dip: one EMF, two temperatures",
-                (ts[tmin], es[tmin]), xytext=(30, 44),
-                textcoords="offset points", color=pal["signal"], fontsize=15,
-                family="serif",
-                arrowprops={"arrowstyle": "-", "color": pal["signal"], "lw": 1.0})
-    ax.set_ylim(-0.09, 0.85)
+                (ts[tmin], es[tmin]), xytext=(150, -0.062),
+                textcoords="data", ha="left", va="center",
+                color=pal["signal"], fontsize=15, family="serif",
+                arrowprops={"arrowstyle": "-", "color": pal["signal"],
+                            "lw": 1.0, "shrinkA": 4, "shrinkB": 2})
+    ax.set_ylim(-0.12, 0.85)
     ax.set_xlabel("temperature (\N{DEGREE SIGN}C)", color=pal["ink2"], fontsize=17, family="serif")
     ax.set_ylabel("EMF (mV)", color=pal["ink2"], fontsize=17, family="serif")
     ax.set_title("Type B below 400 \N{DEGREE SIGN}C: why the library refuses to guess",
