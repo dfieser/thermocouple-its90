@@ -2,6 +2,11 @@
 
 <!-- mcp-name: io.github.dfieser/thermocouple-its90 -->
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/banner-dark.svg">
+  <img src="docs/banner-light.svg" alt="thermocouple-its90: NIST ITS-90 thermocouple conversion for Python. The eight reference functions fan out from the ice point; type K leads in blue.">
+</picture>
+
 NIST ITS-90 thermocouple conversion for Python: voltage to temperature and
 temperature to voltage for all eight letter-designated types (B, E, J, K, N,
 R, S, T), with cold-junction compensation and Seebeck coefficients. The test
@@ -62,6 +67,11 @@ get("t").temperature(-4.648)    # -149.98 C (cryogenic ranges included)
 
 ## Accuracy, verified rather than asserted
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/reference-functions-dark.png">
+  <img src="docs/reference-functions-light.png" alt="All eight ITS-90 reference functions plotted from -270 to 1820 C, each labeled at its end point, computed by this library.">
+</picture>
+
 - The forward reference functions reproduce **all 12,026 one-degree points**
   of the NIST reference tables within their 0.001 mV print rounding. The
   full comparison runs in CI on every push (`tests/test_full_tables.py`).
@@ -74,6 +84,11 @@ get("t").temperature(-4.648)    # -149.98 C (cryogenic ranges included)
 - Type B is handled with its physics: its EMF is non-monotonic near room
   temperature, so inversion below 0.291 mV (about 250 C) is refused with an
   explanation instead of returning one of two possible answers.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/type-b-dip-dark.png">
+  <img src="docs/type-b-dip-light.png" alt="Type B EMF from 0 to 400 C. The curve dips below zero near 21 C, and a dashed line marks 0.291 mV where inversion becomes single-valued.">
+</picture>
 
 ## MCP server for AI agents
 
