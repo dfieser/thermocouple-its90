@@ -1,0 +1,17 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.dfieser/thermocouple-its90",
+  "title": "Thermocouple ITS-90",
+  "description": "NIST ITS-90 thermocouple conversion (types B, E, J, K, N, R, S, T): mV to temperature and back with cold-junction compensation, verified against all 12,026 NIST table points.",
+  "version": "1.0.1",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "thermocouple-its90",
+      "version": "1.0.1",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

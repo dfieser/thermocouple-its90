@@ -1,0 +1,56 @@
+name: Publish to MCP Registry
+
+# Runs when a GitHub release is published, after the PyPI workflow. Waits for
+# the new version to be live on PyPI, because the registry validates package
+# ownership by reading the mcp-name marker from the PyPI description.
+# Authentication is GitHub OIDC: no tokens stored anywhere.
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: publish-mcp
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Wait for the release to be live on PyPI
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "waiting for thermocouple-its90 $VERSION on PyPI"
+          for i in $(seq 1 30); do
+            if curl -fsS "https://pypi.org/pypi/thermocouple-its90/$VERSION/json" > /dev/null 2>&1; then
+              echo "live after $((i*20))s"; exit 0
+            fi
+            sleep 20
+          done
+          echo "PyPI never served $VERSION; registry validation would fail" >&2
+          exit 1
+
+      - name: Sync server.json version to the tag
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          jq --arg v "$VERSION" '.version = $v | .packages[0].version = $v' server.json > server.tmp
+          mv server.tmp server.json
+          cat server.json
+
+      - name: Install mcp-publisher
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+
+      - name: Authenticate via GitHub OIDC
+        run: ./mcp-publisher login github-oidc
+
+      - name: Publish to the registry
+        run: ./mcp-publisher publish

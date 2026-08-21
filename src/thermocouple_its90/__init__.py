@@ -24,7 +24,7 @@ from .core import (
     letters,
 )
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 TypeB = TYPES["B"]
 TypeE = TYPES["E"]

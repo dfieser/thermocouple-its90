@@ -1,5 +1,7 @@
 # thermocouple-its90
 
+<!-- mcp-name: io.github.dfieser/thermocouple-its90 -->
+
 NIST ITS-90 thermocouple conversion for Python: voltage to temperature and
 temperature to voltage for all eight letter-designated types (B, E, J, K, N,
 R, S, T), with cold-junction compensation and Seebeck coefficients. The test
