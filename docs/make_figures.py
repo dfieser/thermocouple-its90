@@ -55,29 +55,51 @@ def style_axes(ax, pal):
         ax.spines[side].set_visible(False)
     for side in ("left", "bottom"):
         ax.spines[side].set_color(pal["ink3"])
-    ax.tick_params(colors=pal["ink2"], labelsize=9)
-    ax.grid(True, color=pal["rule"], linewidth=0.6, alpha=0.9)
+    # Rendered at roughly half size in GitHub's content column, so every
+    # font here is set about twice the size that looks right full-scale.
+    ax.tick_params(colors=pal["ink2"], labelsize=15)
+    ax.grid(True, color=pal["rule"], linewidth=0.7, alpha=0.9)
     ax.set_axisbelow(True)
 
 
+# Hand-placed end-label offsets in points: R and S endpoints are 2.4 mV
+# apart and T ends just beneath the J curve, so automatic placement collides.
+LABEL_OFFSETS = {
+    "E": (8, 4), "J": (8, 0), "K": (8, 0), "N": (8, -4),
+    "R": (8, 12), "S": (8, -2), "B": (8, -6),
+}
+
+
 def reference_functions(theme: str, pal: dict) -> None:
-    fig, ax = plt.subplots(figsize=(8.6, 4.6), dpi=200)
+    fig, ax = plt.subplots(figsize=(9.4, 5.4), dpi=200)
     fig.patch.set_facecolor(pal["paper"])
     style_axes(ax, pal)
     for letter in ["E", "J", "K", "N", "T", "S", "R", "B"]:
         ts, es = curve(TYPES[letter])
-        ax.plot(ts, es, color=SERIES[theme][letter], linewidth=1.7)
-        ax.annotate(letter, (ts[-1], es[-1]), xytext=(5, 0),
+        ax.plot(ts, es, color=SERIES[theme][letter], linewidth=2.4)
+        if letter == "T":
+            # The 400 C corridor is packed (E, J, K all pass close by), so
+            # T gets a short leader into the clear gap between K and N.
+            ax.annotate("T", (ts[-1], es[-1]), xytext=(24, -34),
+                        textcoords="offset points",
+                        color=SERIES[theme][letter], fontsize=17,
+                        fontweight="bold", va="center", family="serif",
+                        arrowprops={"arrowstyle": "-",
+                                    "color": SERIES[theme][letter],
+                                    "lw": 1.0, "shrinkB": 3})
+            continue
+        ax.annotate(letter, (ts[-1], es[-1]), xytext=LABEL_OFFSETS[letter],
                     textcoords="offset points", color=SERIES[theme][letter],
-                    fontsize=10, fontweight="bold", va="center",
+                    fontsize=17, fontweight="bold", va="center",
                     family="serif")
-    ax.set_xlim(-290, 1930)
-    ax.set_xlabel("temperature (\N{DEGREE SIGN}C)", color=pal["ink2"], fontsize=10, family="serif")
-    ax.set_ylabel("EMF (mV, 0 \N{DEGREE SIGN}C reference)", color=pal["ink2"], fontsize=10, family="serif")
+    ax.set_xlim(-300, 1960)
+    ax.set_ylim(-13, 85)
+    ax.set_xlabel("temperature (\N{DEGREE SIGN}C)", color=pal["ink2"], fontsize=17, family="serif")
+    ax.set_ylabel("EMF (mV, 0 \N{DEGREE SIGN}C reference)", color=pal["ink2"], fontsize=17, family="serif")
     ax.set_title("The eight ITS-90 reference functions, computed by this library",
-                 color=pal["ink"], fontsize=12, family="serif", pad=12)
-    fig.text(0.905, 0.02, f"thermocouple-its90 v{__version__}",
-             color=pal["ink3"], fontsize=7, ha="right", family="monospace")
+                 color=pal["ink"], fontsize=20, family="serif", pad=14)
+    fig.text(0.985, 0.015, f"thermocouple-its90 v{__version__}",
+             color=pal["ink3"], fontsize=11, ha="right", family="monospace")
     fig.tight_layout()
     fig.savefig(OUT / f"reference-functions-{theme}.png",
                 facecolor=pal["paper"], bbox_inches="tight")
@@ -85,7 +107,7 @@ def reference_functions(theme: str, pal: dict) -> None:
 
 
 def type_b_dip(theme: str, pal: dict) -> None:
-    fig, ax = plt.subplots(figsize=(8.6, 3.4), dpi=200)
+    fig, ax = plt.subplots(figsize=(9.4, 4.2), dpi=200)
     fig.patch.set_facecolor(pal["paper"])
     style_axes(ax, pal)
     ts, es = [], []
@@ -94,23 +116,24 @@ def type_b_dip(theme: str, pal: dict) -> None:
         t = 0 + 400 * i / n
         ts.append(t)
         es.append(TypeB.emf(t))
-    ax.plot(ts, es, color=SERIES[theme]["B"], linewidth=2.0)
+    ax.plot(ts, es, color=SERIES[theme]["B"], linewidth=2.8)
     inv_lo, _ = TypeB.invertible_emf_range
-    ax.axhline(inv_lo, color=pal["ultra"], linewidth=1.1, linestyle=(0, (5, 3)))
-    ax.axhline(0.0, color=pal["ink3"], linewidth=0.8)
+    ax.axhline(inv_lo, color=pal["ultra"], linewidth=1.4, linestyle=(0, (5, 3)))
+    ax.axhline(0.0, color=pal["ink3"], linewidth=0.9)
     ax.annotate("0.291 mV: inversion starts here",
-                (395, inv_lo), xytext=(-8, 8), textcoords="offset points",
-                ha="right", color=pal["ultra"], fontsize=9, family="serif")
+                (12, inv_lo), xytext=(0, 10), textcoords="offset points",
+                ha="left", color=pal["ultra"], fontsize=15, family="serif")
     tmin = min(range(len(es)), key=lambda i: es[i])
     ax.annotate("the dip: one EMF, two temperatures",
-                (ts[tmin], es[tmin]), xytext=(26, 14),
-                textcoords="offset points", color=pal["signal"], fontsize=9,
+                (ts[tmin], es[tmin]), xytext=(30, 44),
+                textcoords="offset points", color=pal["signal"], fontsize=15,
                 family="serif",
-                arrowprops={"arrowstyle": "-", "color": pal["signal"], "lw": 0.8})
-    ax.set_xlabel("temperature (\N{DEGREE SIGN}C)", color=pal["ink2"], fontsize=10, family="serif")
-    ax.set_ylabel("EMF (mV)", color=pal["ink2"], fontsize=10, family="serif")
+                arrowprops={"arrowstyle": "-", "color": pal["signal"], "lw": 1.0})
+    ax.set_ylim(-0.09, 0.85)
+    ax.set_xlabel("temperature (\N{DEGREE SIGN}C)", color=pal["ink2"], fontsize=17, family="serif")
+    ax.set_ylabel("EMF (mV)", color=pal["ink2"], fontsize=17, family="serif")
     ax.set_title("Type B below 400 \N{DEGREE SIGN}C: why the library refuses to guess",
-                 color=pal["ink"], fontsize=12, family="serif", pad=12)
+                 color=pal["ink"], fontsize=20, family="serif", pad=14)
     fig.tight_layout()
     fig.savefig(OUT / f"type-b-dip-{theme}.png",
                 facecolor=pal["paper"], bbox_inches="tight")
@@ -120,10 +143,12 @@ def type_b_dip(theme: str, pal: dict) -> None:
 def banner(theme: str, pal: dict) -> None:
     """SVG banner: monograph crop marks, the registration square, real type K
     and type S curves as the motif. 1280x320."""
-    w, h = 1280, 320
+    w, h = 1280, 340
     # The recognizable image of the field: all eight reference functions on
-    # one COMMON temperature and EMF scale, fanning out from the origin.
-    x0, x1, y0, y1 = 560, 1195, 42, 278
+    # one COMMON temperature and EMF scale, fanning out from the origin. The
+    # fan owns the right third; the text block owns the left two thirds, so
+    # the two can never collide at any display size.
+    x0, x1, y0, y1 = 810, 1200, 46, 296
     t_lo, t_hi = -270.0, 1820.0
     e_lo, e_hi = -10.5, 77.0
 
@@ -155,12 +180,12 @@ def banner(theme: str, pal: dict) -> None:
   <path d="M{w - 34} {h - 18} H{w - 18} V{h - 34}" fill="none" stroke="{cm}" stroke-width="2"/>
   <!-- motif: the eight reference functions on one common scale -->
   {fan_svg}
-  <!-- wordmark -->
-  <rect x="64" y="92" width="13" height="13" fill="{pal['signal']}"/>
-  <text x="92" y="105" font-family="Charter, 'Iowan Old Style', Georgia, serif" font-size="42" font-weight="bold" fill="{pal['ink']}">thermocouple-its90</text>
-  <text x="64" y="152" font-family="Charter, Georgia, serif" font-size="19" fill="{pal['ink2']}">NIST ITS-90 thermocouple conversion for Python</text>
-  <text x="64" y="196" font-family="ui-monospace, Consolas, monospace" font-size="14" fill="{pal['ink3']}">types B E J K N R S T &#183; cold-junction compensation &#183; MCP server</text>
-  <text x="64" y="222" font-family="ui-monospace, Consolas, monospace" font-size="14" fill="{pal['ink3']}">verified against all 12,026 NIST reference points</text>
+  <!-- wordmark: sized to stay legible after GitHub scales this to ~890px -->
+  <rect x="64" y="84" width="18" height="18" fill="{pal['signal']}"/>
+  <text x="100" y="102" font-family="Charter, 'Iowan Old Style', Georgia, serif" font-size="58" font-weight="bold" fill="{pal['ink']}">thermocouple-its90</text>
+  <text x="64" y="164" font-family="Charter, Georgia, serif" font-size="28" fill="{pal['ink2']}">NIST ITS-90 thermocouple conversion for Python</text>
+  <text x="64" y="222" font-family="ui-monospace, Consolas, monospace" font-size="20" fill="{pal['ink3']}">types B E J K N R S T &#183; cold-junction compensation</text>
+  <text x="64" y="256" font-family="ui-monospace, Consolas, monospace" font-size="20" fill="{pal['ink3']}">MCP server &#183; verified against all 12,026 NIST points</text>
 </svg>
 """
     (OUT / f"banner-{theme}.svg").write_text(svg, encoding="utf-8")
