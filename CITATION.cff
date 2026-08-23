@@ -6,8 +6,8 @@ authors:
   - family-names: Fieser
     given-names: David
     orcid: "https://orcid.org/0009-0007-5754-4331"
-version: 1.0.1
-date-released: 2026-08-20
+version: 1.0.2
+date-released: 2026-08-23
 license: MIT
 repository-code: "https://github.com/dfieser/thermocouple-its90"
 url: "https://dfieser.com/ThermocoupleConverter/index.html"

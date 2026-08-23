@@ -3,12 +3,12 @@
   "name": "io.github.dfieser/thermocouple-its90",
   "title": "Thermocouple ITS-90",
   "description": "NIST ITS-90 thermocouple conversion, all 8 types, cold-junction compensation, NIST-table verified.",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "thermocouple-its90",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "transport": {
         "type": "stdio"
       }
