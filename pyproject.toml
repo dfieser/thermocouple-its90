@@ -36,7 +36,9 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-mcp = ["mcp>=1.0"]
+# 1.7 is the first release with ToolAnnotations; 2.x renamed FastMCP to
+# MCPServer and mcp_server.py handles both.
+mcp = ["mcp>=1.7"]
 
 [project.scripts]
 thermocouple-its90-mcp = "thermocouple_its90.mcp_server:main"

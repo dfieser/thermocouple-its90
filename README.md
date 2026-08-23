@@ -101,7 +101,12 @@ claude mcp add thermocouple -- thermocouple-its90-mcp
 ```
 
 Tools: `thermocouple_to_temperature`, `thermocouple_to_emf`,
-`thermocouple_types`.
+`thermocouple_types`. All three are annotated read-only and idempotent with
+no outside effects, so a host can tell a user what a call will do before it
+runs.
+
+The extra needs Python 3.10 or newer and works with either line of the MCP
+SDK, 1.7 and later or 2.x. CI builds the server against both on every push.
 
 ## Data provenance and licensing
 

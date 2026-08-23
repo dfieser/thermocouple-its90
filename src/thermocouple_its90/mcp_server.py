@@ -13,22 +13,53 @@ polynomials; a verified lookup beats a confident guess.
 
 from __future__ import annotations
 
-from . import get, letters
+from . import __version__, get, letters
 
 
-def _build_server():  # pragma: no cover - exercised via the MCP runtime
-    from mcp.server.fastmcp import FastMCP
+def _build_server():
+    # mcp 2.0 renamed FastMCP to MCPServer and moved the module. Both are
+    # supported here: the constructor, the tool decorator and run() take the
+    # same arguments either way, and ToolAnnotations accepts the camelCase
+    # wire names on both, so only the import differs.
+    try:
+        from mcp.server.mcpserver import MCPServer as _Server  # mcp >= 2.0
 
-    mcp = FastMCP(
+        # 2.x lets the server report its own version, which is what a host
+        # shows the user. 1.x reports the SDK version and takes no override.
+        extra = {"version": __version__}
+    except ModuleNotFoundError:
+        from mcp.server.fastmcp import FastMCP as _Server  # mcp 1.x
+
+        extra = {}
+
+    from mcp.types import ToolAnnotations
+
+    mcp = _Server(
         "thermocouple-its90",
         instructions=(
             "ITS-90 thermocouple conversions (NIST Monograph 175), types "
             "B, E, J, K, N, R, S, T. Temperatures in Celsius, EMF in mV. "
             "All conversions include explicit cold-junction handling."
         ),
+        **extra,
     )
 
-    @mcp.tool()
+    def _pure(title: str) -> ToolAnnotations:
+        """Hints for a tool that only reads the built-in polynomial data.
+
+        Every tool here is a pure function: nothing is written, nothing is
+        fetched over the network, and the same arguments always give the same
+        answer. Hosts read these to decide what to tell a user before a call.
+        """
+        return ToolAnnotations(
+            title=title,
+            readOnlyHint=True,
+            destructiveHint=False,
+            idempotentHint=True,
+            openWorldHint=False,
+        )
+
+    @mcp.tool(annotations=_pure("Thermocouple EMF to temperature"))
     def thermocouple_to_temperature(
         type_letter: str, emf_mv: float, reference_c: float = 0.0
     ) -> dict:
@@ -47,7 +78,7 @@ def _build_server():  # pragma: no cover - exercised via the MCP runtime
             "type": tc.letter,
         }
 
-    @mcp.tool()
+    @mcp.tool(annotations=_pure("Temperature to thermocouple EMF"))
     def thermocouple_to_emf(
         type_letter: str, temperature_c: float, reference_c: float = 0.0
     ) -> dict:
@@ -59,7 +90,7 @@ def _build_server():  # pragma: no cover - exercised via the MCP runtime
             "type": tc.letter,
         }
 
-    @mcp.tool()
+    @mcp.tool(annotations=_pure("List the thermocouple types"))
     def thermocouple_types() -> list:
         """The eight letter-designated types with ranges and EMF spans."""
         out = []
@@ -81,9 +112,20 @@ def main() -> None:
     try:
         server = _build_server()
     except ImportError as exc:
+        import importlib.util
+
+        if importlib.util.find_spec("mcp") is None:
+            raise SystemExit(
+                "The MCP extra is not installed. Run: "
+                'pip install "thermocouple-its90[mcp]"'
+            ) from exc
+        # mcp is installed but does not expose what this server expects, so
+        # do not send the reader off to reinstall something they already have.
         raise SystemExit(
-            "The MCP extra is not installed. Run: "
-            'pip install "thermocouple-its90[mcp]"'
+            f"The installed mcp SDK is missing an expected API: {exc}. "
+            "thermocouple-its90 supports mcp 1.7 and later, including 2.x. "
+            "Please report this at "
+            "https://github.com/dfieser/thermocouple-its90/issues"
         ) from exc
     server.run()
 
