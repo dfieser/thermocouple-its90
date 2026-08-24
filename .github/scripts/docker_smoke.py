@@ -4,6 +4,10 @@ The Glama registry builds this repository's Dockerfile and starts the server
 to run its own checks, so the image is verified here rather than assumed to
 work. The container runs with --network none: every coefficient is compiled
 into the package, so a server that reaches for the network is a bug.
+
+stdin is held open until every reply has been read. Closing it early lets
+the server begin shutting down while the last request is still in flight,
+which looks exactly like a broken tool call.
 """
 
 from __future__ import annotations
@@ -13,30 +17,7 @@ import subprocess
 import sys
 
 IMAGE = "thermocouple-its90-mcp:ci"
-
-REQUESTS = [
-    {
-        "jsonrpc": "2.0",
-        "id": 1,
-        "method": "initialize",
-        "params": {
-            "protocolVersion": "2024-11-05",
-            "capabilities": {},
-            "clientInfo": {"name": "docker-smoke", "version": "0"},
-        },
-    },
-    {"jsonrpc": "2.0", "method": "notifications/initialized"},
-    {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}},
-    {
-        "jsonrpc": "2.0",
-        "id": 3,
-        "method": "tools/call",
-        "params": {
-            "name": "thermocouple_to_temperature",
-            "arguments": {"type_letter": "K", "emf_mv": 4.096, "reference_c": 25.0},
-        },
-    },
-]
+TIMEOUT_S = 60
 
 failures = 0
 
@@ -45,81 +26,129 @@ def check(name: str, ok: bool, detail: object = None) -> None:
     global failures
     line = ("ok   " if ok else "FAIL ") + name
     if detail is not None:
-        line += f"  [{str(detail)[:300]}]"
-    print(line, file=sys.stdout if ok else sys.stderr)
+        line += f"  [{str(detail)[:400]}]"
+    print(line, file=sys.stdout if ok else sys.stderr, flush=True)
     if not ok:
         failures += 1
 
 
-stdin = "".join(json.dumps(r) + "\n" for r in REQUESTS)
-proc = subprocess.run(
+proc = subprocess.Popen(
     ["docker", "run", "--rm", "-i", "--network", "none", IMAGE],
-    input=stdin,
-    capture_output=True,
+    stdin=subprocess.PIPE,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE,
     text=True,
-    timeout=180,
+    bufsize=1,
 )
 
-responses = {}
-for line in proc.stdout.splitlines():
-    line = line.strip()
-    if not line:
-        continue
-    try:
-        msg = json.loads(line)
-    except json.JSONDecodeError:
-        continue
-    if isinstance(msg, dict) and msg.get("id") is not None:
-        responses[msg["id"]] = msg
 
-if not responses:
-    print("no JSON-RPC responses; container stderr follows:", file=sys.stderr)
-    print(proc.stderr[-3000:], file=sys.stderr)
-    sys.exit(1)
+def send(msg: dict) -> None:
+    proc.stdin.write(json.dumps(msg) + "\n")
+    proc.stdin.flush()
 
-init = responses.get(1, {}).get("result", {})
-check("server initializes", bool(init.get("serverInfo")), init.get("serverInfo"))
 
-tools = responses.get(2, {}).get("result", {}).get("tools", [])
-names = sorted(t.get("name") for t in tools)
-check(
-    "exposes the three tools",
-    names
-    == ["thermocouple_to_emf", "thermocouple_to_temperature", "thermocouple_types"],
-    names,
-)
+def read_reply(want_id: int) -> dict | None:
+    """Read lines until the reply with this id shows up, skipping notifications."""
+    while True:
+        line = proc.stdout.readline()
+        if not line:
+            return None
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            msg = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(msg, dict) and msg.get("id") == want_id:
+            return msg
 
-for tool in tools:
-    ann = tool.get("annotations") or {}
+
+try:
+    send(
+        {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "initialize",
+            "params": {
+                "protocolVersion": "2024-11-05",
+                "capabilities": {},
+                "clientInfo": {"name": "docker-smoke", "version": "0"},
+            },
+        }
+    )
+    init = (read_reply(1) or {}).get("result") or {}
+    check("server initializes", bool(init.get("serverInfo")), init.get("serverInfo"))
+
+    send({"jsonrpc": "2.0", "method": "notifications/initialized"})
+
+    send({"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}})
+    tools = ((read_reply(2) or {}).get("result") or {}).get("tools") or []
+    names = sorted(t.get("name") for t in tools)
     check(
-        f"{tool.get('name')} is annotated read-only",
-        ann.get("readOnlyHint") is True and ann.get("destructiveHint") is False,
-        ann,
+        "exposes the three tools",
+        names
+        == [
+            "thermocouple_to_emf",
+            "thermocouple_to_temperature",
+            "thermocouple_types",
+        ],
+        names,
     )
 
-# Type K at 4.096 mV with the terminals at 25 C is 124.3 C. A naive lookup
-# that ignores the cold junction gives 100.0 C, so this value also proves
-# compensation is actually applied inside the container.
-call = responses.get(3, {}).get("result", {})
-payload = None
-for block in call.get("content", []):
-    if block.get("type") == "text":
-        try:
-            payload = json.loads(block["text"])
-        except (json.JSONDecodeError, KeyError):
-            payload = block.get("text")
-if payload is None:
-    payload = call.get("structuredContent")
+    for tool in tools:
+        ann = tool.get("annotations") or {}
+        check(
+            f"{tool.get('name')} is annotated read-only",
+            ann.get("readOnlyHint") is True and ann.get("destructiveHint") is False,
+            ann,
+        )
 
-got = payload.get("temperature_c") if isinstance(payload, dict) else None
-check(
-    "type K 4.096 mV with 25 C terminals returns 124.3 C",
-    got is not None and abs(got - 124.31) < 0.05,
-    payload,
-)
+    # Type K at 4.096 mV with the terminals at 25 C is 124.3 C. A naive lookup
+    # that ignores the cold junction gives 100.0 C, so this value also proves
+    # compensation is actually applied inside the container.
+    send(
+        {
+            "jsonrpc": "2.0",
+            "id": 3,
+            "method": "tools/call",
+            "params": {
+                "name": "thermocouple_to_temperature",
+                "arguments": {
+                    "type_letter": "K",
+                    "emf_mv": 4.096,
+                    "reference_c": 25.0,
+                },
+            },
+        }
+    )
+    res = (read_reply(3) or {}).get("result") or {}
+    payload = res.get("structuredContent")
+    if payload is None:
+        blocks = res.get("content") or []
+        if blocks and blocks[0].get("type") == "text":
+            try:
+                payload = json.loads(blocks[0]["text"])
+            except (json.JSONDecodeError, KeyError):
+                payload = None
+    got = (payload or {}).get("temperature_c")
+    check(
+        "type K 4.096 mV with 25 C terminals returns 124.3 C",
+        got is not None and abs(got - 124.3) < 0.05,
+        got if got is not None else res,
+    )
+finally:
+    try:
+        proc.stdin.close()
+    except OSError:
+        pass
+    try:
+        proc.wait(timeout=15)
+    except subprocess.TimeoutExpired:
+        proc.kill()
 
 if failures:
     print(f"\n{failures} FAILURE(S)", file=sys.stderr)
-    print(proc.stderr[-2000:], file=sys.stderr)
+    print((proc.stderr.read() or "")[-2000:], file=sys.stderr)
     sys.exit(1)
 print("\ncontainer works over stdio with the network switched off")
