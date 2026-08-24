@@ -72,3 +72,20 @@ jobs:
 
       - name: Build the server and check its tool annotations
         run: pytest tests/test_mcp_server.py -q
+
+  # The Dockerfile is what the Glama registry builds to run its own checks,
+  # so it is tested here rather than trusted. The container is driven over a
+  # real stdio MCP handshake, with the network switched off to prove the
+  # server needs nothing but itself.
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Build the image
+        run: docker build -t thermocouple-its90-mcp:ci .
+
+      - name: Talk to the container over stdio
+        run: python .github/scripts/docker_smoke.py
